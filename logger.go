@@ -90,9 +90,18 @@ func (h *Handler) Handle(ctx context.Context, r slog.Record) error {
 		attrs = append(attrs, slog.String("span", spanCtx.SpanID().String()))
 	}
 	if r.Level == slog.LevelError {
-		fs := runtime.CallersFrames([]uintptr{r.PC})
-		f, _ := fs.Next()
-		attrs = append(attrs, slog.Any("source", slog.Source{Function: f.Function, File: f.File, Line: f.Line}))
+		var isSource bool
+		r.Attrs(func(attr slog.Attr) bool {
+			if !isSource {
+				isSource = attr.Key == slog.SourceKey
+			}
+			return true
+		})
+		if !isSource {
+			fs := runtime.CallersFrames([]uintptr{r.PC})
+			f, _ := fs.Next()
+			attrs = append(attrs, slog.Any(slog.SourceKey, slog.Source{Function: f.Function, File: f.File, Line: f.Line}))
+		}
 	}
 	if len(attrs) > 0 {
 		r.AddAttrs(attrs...)
