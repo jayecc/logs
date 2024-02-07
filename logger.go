@@ -3,7 +3,6 @@ package logs
 import (
 	"context"
 	"go.opentelemetry.io/otel/trace"
-	"io"
 	"log/slog"
 	"runtime"
 	"strings"
@@ -49,9 +48,9 @@ func ParseLevel(level string) slog.Level {
 	}
 }
 
-func NewHandler(w io.Writer, opts *slog.HandlerOptions, hooks ...*Hook) *Handler {
+func NewHandler(handler slog.Handler, hooks ...*Hook) *Handler {
 	h := &Handler{
-		Handler:  slog.NewJSONHandler(w, opts),
+		Handler:  handler,
 		hooks:    hooks,
 		hookChan: make(chan *hookTurn, 1<<10),
 	}
