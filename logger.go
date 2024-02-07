@@ -48,7 +48,7 @@ func ParseLevel(level string) slog.Level {
 	}
 }
 
-func NewHandler(handler slog.Handler, hooks ...*Hook) *Handler {
+func WrapHandler(handler slog.Handler, hooks ...*Hook) *Handler {
 	h := &Handler{
 		Handler:  handler,
 		hooks:    hooks,
