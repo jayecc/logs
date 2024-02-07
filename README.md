@@ -16,9 +16,9 @@ func main() {
     
     level.Set(logs.ParseLevel("debug"))
 
-    slog.SetDefault(slog.New(lib.NewHandler(
-        io.MultiWriter(os.Stdout, logs.NewWriter(syncer, 10<<10)),
-        &slog.HandlerOptions{Level: &level},
+    slog.SetDefault(slog.New(WrapHandler(slog.NewJSONHandler(
+        io.MultiWriter(os.Stdout, NewWriter(syncer, 10<<10)),
+        &slog.HandlerOptions{Level: &level}),
     )))
 
     slog.DebugContext(ctx, "DebugContext")
