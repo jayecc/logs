@@ -81,39 +81,51 @@ func (h *Handler) Handle(ctx context.Context, r slog.Record) error {
 	if !h.Handler.Enabled(ctx, r.Level) {
 		return h.Handler.Handle(ctx, r)
 	}
+
 	var attrs []slog.Attr
+
 	spanCtx := trace.SpanContextFromContext(ctx)
 	if spanCtx.HasTraceID() {
 		attrs = append(attrs, slog.String("trace", spanCtx.TraceID().String()))
 	}
+
 	if spanCtx.HasSpanID() {
 		attrs = append(attrs, slog.String("span", spanCtx.SpanID().String()))
 	}
+
 	if r.Level == slog.LevelError {
+
 		var isSource bool
+
 		r.Attrs(func(attr slog.Attr) bool {
 			if !isSource {
 				isSource = attr.Key == slog.SourceKey
 			}
 			return true
 		})
+
 		if !isSource {
 			fs := runtime.CallersFrames([]uintptr{r.PC})
 			f, _ := fs.Next()
 			attrs = append(attrs, slog.Any(slog.SourceKey, slog.Source{Function: f.Function, File: f.File, Line: f.Line}))
 		}
 	}
+
 	if len(attrs) > 0 {
 		r.AddAttrs(attrs...)
 	}
+
 	for _, hook := range h.hooks {
+
 		if len(h.hookChan) >= (1<<10)-1 {
 			continue
 		}
+
 		if hook.level == r.Level {
 			h.hookChan <- &hookTurn{h: hook.handle, r: r}
 		}
 	}
+
 	return h.Handler.Handle(ctx, r)
 }
 
