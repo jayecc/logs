@@ -2,6 +2,7 @@ package logs
 
 import (
 	"context"
+	"fmt"
 	"go.opentelemetry.io/otel/trace"
 	"log/slog"
 	"runtime"
@@ -94,21 +95,10 @@ func (h *Handler) Handle(ctx context.Context, r slog.Record) error {
 	}
 
 	if r.Level == slog.LevelError {
-
-		var isSource bool
-
-		r.Attrs(func(attr slog.Attr) bool {
-			if !isSource {
-				isSource = attr.Key == slog.SourceKey
-			}
-			return true
-		})
-
-		if !isSource {
-			fs := runtime.CallersFrames([]uintptr{r.PC})
-			f, _ := fs.Next()
-			attrs = append(attrs, slog.Any(slog.SourceKey, slog.Source{Function: f.Function, File: f.File, Line: f.Line}))
-		}
+		fmt.Println(r.NumAttrs())
+		fs := runtime.CallersFrames([]uintptr{r.PC})
+		f, _ := fs.Next()
+		attrs = append(attrs, slog.Any(slog.SourceKey, slog.Source{Function: f.Function, File: f.File, Line: f.Line}))
 	}
 
 	if len(attrs) > 0 {
