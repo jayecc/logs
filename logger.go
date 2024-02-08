@@ -2,6 +2,7 @@ package logs
 
 import (
 	"context"
+	"fmt"
 	"go.opentelemetry.io/otel/trace"
 	"log/slog"
 	"runtime"
@@ -94,9 +95,22 @@ func (h *Handler) Handle(ctx context.Context, r slog.Record) error {
 	}
 
 	if r.Level == slog.LevelError {
-		fs := runtime.CallersFrames([]uintptr{r.PC})
-		f, _ := fs.Next()
-		attrs = append(attrs, slog.Any(slog.SourceKey, slog.Source{Function: f.Function, File: f.File, Line: f.Line}))
+		rpc := make([]uintptr, 20)
+		n := runtime.Callers(4, rpc)
+		rpc = rpc[:n]
+		rpc = rpc[findIndex(rpc, r.PC):]
+		frames := runtime.CallersFrames(rpc)
+		stack := make([]string, 0, len(rpc))
+		for {
+			frame, more := frames.Next()
+			if !more {
+				break
+			}
+			stack = append(stack, fmt.Sprintf("%s -> %s:%d", frame.Function, frame.File, frame.Line))
+		}
+		if len(stack) > 0 {
+			attrs = append(attrs, slog.Any("stack", stack))
+		}
 	}
 
 	if len(attrs) > 0 {
@@ -124,6 +138,15 @@ func (h *Handler) hook() {
 			hook.h(hook.r)
 		}
 	}
+}
+
+func findIndex(slice []uintptr, val uintptr) int {
+	for i, item := range slice {
+		if item == val {
+			return i
+		}
+	}
+	return -1
 }
 
 //idx := strings.LastIndexByte(f.File, '/')
