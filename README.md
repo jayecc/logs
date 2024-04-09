@@ -1,5 +1,5 @@
 # logs
-Based on slog packaging, supports context tracking and asynchronous hooks
+Based on slog packaging, supports context tracking
 
 ### Example
 
