@@ -59,6 +59,7 @@ func (w *Writer) Write(p []byte) (n int, err error) {
 }
 
 func (w *Writer) Close() error {
+	w.g.Go(w.w.Close)
 	w.cl.Store(true)
 	close(w.ch)
 	return w.g.Wait()
